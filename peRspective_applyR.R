@@ -52,7 +52,7 @@ osu_faculty_demos_miss <- osu_faculty_demos_miss[,1:8]
 osu_faculty_demos <- rbind(osu_faculty_demos, osu_faculty_demos_miss)
 
 ### api key
-pr_api <- "AIzaSyBcW836khRPsqS-Fkkm7P0LNfk4B98_sZ0"
+pr_api <- "" # set here with the appropriate API key 
 
 ###calculation of the OSU inter reliability 
 ### Read in the csv data 
@@ -178,6 +178,8 @@ test_set_osu_rmp$coded_toxic[test_set_osu_rmp$total_toxicity>0] = 1
 write.csv(test_set_osu_rmp,"final_data/labeled_osu_data.csv",row.names = F)
 
 
+### read in the OSU data 
+test_set_osu_rmp <- read.csv("final_data/labeled_osu_data.csv")
 ## now run the reg 
 ## let's do a simple linear model 
 test_lm <- lm((TOXICITY2)*100 ~ total_toxicity, data=test_set_osu_rmp)
@@ -186,19 +188,25 @@ summary(test_lm) # each additional score associated with an increase of 12 point
 
 ggplot_persp_corr <- ggplot(test_set_osu_rmp, aes(x=total_toxicity,y=(TOXICITY2)*100,
                                                   group=as.factor(coded_toxic),
-                                                  col=as.factor(coded_toxic))) +
-  geom_point() +
+                                                  col=as.factor(coded_toxic),
+                                                  shape=as.factor(coded_toxic))) +
+  geom_point(alpha=0.5, size=2) +
   theme_minimal() + ## cleans up the presentation of the plot 
-  labs(title="Comparison of correlation of manual coding \n on peRspective scores",
+  labs(title="Comparison of correlation of manual coding on peRspective scores",
        x="Aggregated manual coding of comments", y="peRspective Toxicity score", 
-       caption=paste0("X-axis reflects the average of the two coders, with an ICC of 0.633. /n 
+       caption=paste0("X-axis reflects the average of the two coders, with an ICC of 0.633. 
                       R-squared = 0.3263, coef = 12.2794"))+
-  scale_color_discrete(name = "Manual coding", labels = c("Not toxic", "Toxic")) + ylim(0,100)+
+  scale_color_manual(name = "Manual coding", values= c("gray70", "gray10"), labels = c("Not toxic", "Toxic")) +
+  ylim(0,100)+
+  scale_shape_manual(name = "Manual coding", values=c(15,17), labels = c("Not toxic", "Toxic")) + 
   stat_smooth(method = "lm",
               formula = y ~ x,
               geom = "smooth")
-ggplot_persp_corr
-ggsave("plots/coding_perspective_corr_plot.png" ,ggplot_persp_corr, 
+ggplot_persp_corr # ok, this is what we want; get ri of the \n, 
+# grayscale, add transparency, change to triangles and squares
+# 
+
+ggsave("plots/coding_perspective_corr_plot_gs.png" ,ggplot_persp_corr, 
        scale=1,width=9,height=6,units = c("in"), dpi=400,bg="white")
 
 ### can we create a ggplot with insult as a cross ref? 
