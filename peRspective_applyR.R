@@ -9,6 +9,7 @@ library(rstudioapi) ## for efficient grabbing of working directory info
 library(ggplot2) ## for cool plots 
 library(irr)
 library(arm)
+library(stringr)
 ## 
 library("remotes")
 install_github("cran/peRspective") # use to install if not done already
@@ -209,43 +210,6 @@ ggplot_persp_corr # ok, this is what we want; get ri of the \n,
 ggsave("plots/coding_perspective_corr_plot_gs.png" ,ggplot_persp_corr, 
        scale=1,width=9,height=6,units = c("in"), dpi=400,bg="white")
 
-### can we create a ggplot with insult as a cross ref? 
-ggplot_persp_insult <- ggplot(test_set_osu_rmp, aes(x=(INSULT)*100,y=(TOXICITY2)*100,
-                                                  group=as.factor(coded_toxic),
-                                                  col=as.factor(coded_toxic))) +
-  geom_point() +
-  theme_minimal() + ## cleans up the presentation of the plot 
-  labs(title="Comparison of correlation of manual coding \n on peRspective scores",
-       x="Aggregated manual coding of comments", y="peRspective Toxicity score", 
-       caption=paste0("X-axis reflects the average of the two coders, with an ICC of 0.633. /n 
-                      R-squared = 0.3263, coef = 12.2794"))+
-  scale_color_discrete(name = "Manual coding", labels = c("Not toxic", "Toxic")) + ylim(0,100)
-ggplot_persp_insult
-
-##check num of obs 
-length(which(rmp_df_osu2nontoxic$INSULT>.20 & rmp_df_osu2nontoxic$TOXICITY2>.1)) # 61 obs 
-length(which(rmp_df_osu2toxic$INSULT>.20 & rmp_df_osu2toxic$TOXICITY2>.1)) # 160.
-
-## this is a good boost, as it would be prob of 72 pct toxicity given the label 
-
-### hmmm. Going with this, it would increase FN, but also potentially clean the data A LOT more 
-quantile(rmp_df_osu2toxic$INSULT, seq(0,1,by=0.05))
-quantile(rmp_df_osu2nontoxic$INSULT, seq(0,1,by=0.05)) ## looking at this, about 40% of the toxic data 
-# have scores below 0.05 on insult. HOWEVER, that discards 90% of the nontoxic data. Let's check this out 
-### could play around with the insult at 0.1 - 0.2; will want to look back into 
-
-
-### go with new cut off 
-length(which(rmp_df_osu2nontoxic$INSULT>.15 & rmp_df_osu2nontoxic$TOXICITY2>.1)) # 185 obs 
-length(which(rmp_df_osu2toxic$INSULT>.15 & rmp_df_osu2toxic$TOXICITY2>.1)) # 264.
-## nah, doesn't do much, since they are the same obs; we could look at the type of comments left over, though
-
-insult_sub_tox <- subset(rmp_df_osu2toxic, INSULT >= 0.2 )
-table(insult_sub_tox$total_toxicity)
-table(rmp_df_osu2toxic$total_toxicity) ## most of the movement does seem to happen with the scores 2 and 
-#below. For everything else above, most the obs are kept 
-
-
 
 ### get the top comments 
 rmp_df_osu2nontoxic <- rmp_df_osu2nontoxic[order(rmp_df_osu2nontoxic$TOXICITY2, decreasing = T),]
@@ -254,7 +218,7 @@ rmp_df_osu2nontoxic <- rmp_df_osu2nontoxic[order(rmp_df_osu2nontoxic$TOXICITY2, 
 write.csv(rmp_df_osu2nontoxic, "rmp_df_osu2nontoxic.csv")
 
 ### read in the weighted data 
-rmp_df_osu2nontoxic_coded <- read.csv("rmp_df_osu2nontoxic_manual_search.csv")
+rmp_df_osu2nontoxic_coded <- read.csv("final_data/rmp_df_osu2nontoxic_manual_search.csv")
 
 ### create new field for reason ; clean up data 
 rmp_df_osu2nontoxic_coded$reason <- rmp_df_osu2nontoxic_coded$reason_fp1
@@ -495,23 +459,26 @@ test_set_unc_rmp$coded_toxic[test_set_unc_rmp$total_toxicity>0] = 1
 ##export as csv to final data 
 write.csv(test_set_unc_rmp, "final_data/labeled_unc_data.csv",row.names = F )
 
-### now create the ggplot 
 ggplot_persp_corr_unc <- ggplot(test_set_unc_rmp, aes(x=total_toxicity,y=(TOXICITY2)*100,
-                                                  group=as.factor(coded_toxic),
-                                                  col=as.factor(coded_toxic))) +
-  geom_point() +
+                                                      group=as.factor(coded_toxic),
+                                                      col=as.factor(coded_toxic),
+                                                      shape=as.factor(coded_toxic))) +
+  geom_point(alpha=0.5, size=2) +
   theme_minimal() + ## cleans up the presentation of the plot 
   labs(title="Comparison of correlation of manual coding \n on peRspective scores",
        x="Aggregated manual coding of comments", y="peRspective Toxicity score", 
-       caption=paste0("X-axis reflects the average of the two coders, with an ICC of 0.0768. 
+       caption=paste0("X-axis reflects the average of the two coders, with an ICC of 0.768. 
                       R-squared = 0.3188, coef = 7.5 "))+
-  scale_color_discrete(name = "Manual coding", labels = c("Not toxic", "Toxic")) + ylim(0,100)+
+  scale_color_manual(name = "Manual coding", values= c("gray70", "gray10"), labels = c("Not toxic", "Toxic")) + 
+  ylim(0,100)+
+  scale_shape_manual(name = "Manual coding", values=c(15,17), labels = c("Not toxic", "Toxic")) +
   stat_smooth(method = "lm",
               formula = y ~ x,
               geom = "smooth")
 ggplot_persp_corr_unc
-ggsave("plots/coding_perspective_corr_plot_unc.png" ,ggplot_persp_corr_unc, 
+ggsave("plots/coding_perspective_corr_plot_unc_gs.png" ,ggplot_persp_corr_unc, 
        scale=1,width=9,height=6,units = c("in"), dpi=400,bg="white")
+
 
 ### now identify the results by race, like we did for the OSU data
 
