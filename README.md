@@ -15,4 +15,8 @@ Read me for: Suzelis, Koen, Gabriel Mott and John A Curiel. 2025. "Automating Id
   ### Intermediary files: 
 
     persp_rmp_output_osu.rds - The saved output of the peRspective scores for the OSU data 
+
+  ### Output files 
+
+  
     
